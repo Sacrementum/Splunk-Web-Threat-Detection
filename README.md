@@ -34,31 +34,31 @@ This lab highlights the ability to simulate attack traffic, write precise SPL qu
 ---
 
 ## 🇹🇷 Türkçe - Amacımız
-Bu proje, kritik web uygulaması saldırılarını tespit etmede **Detection Engineering (Tespit Mühendisliği)** yaklaşımını sergilemektedir. Gigabaytlarca gürültülü production (canlı ortam) verisi içinde kaybolmak yerine, spesifik saldırı vektörlerini içeren sentetik Apache access logları (Proof of Concept - PoC) ürettim. Bu izole ortam, yazdığım özel Splunk SPL korelasyon kurallarını canlı bir SIEM ortamına deploy etmeden önce kusursuz bir hassasiyetle inşa etmemi, test etmemi ve doğrulamamı sağladı.
+Bu proje, web uygulamalarındaki kritik saldırıları yakalamak için **Tespit Mühendisliği (Detection Engineering)** yaklaşımını temel alıyor. Milyonlarca satırlık canlı sistem logları içinde boğulmak yerine, spesifik saldırı vektörlerini içeren kendi Apache loglarımı ürettim (Proof of Concept). Bu izole laboratuvar ortamı, hazırladığım SPL korelasyon kurallarını canlı SIEM ortamına almadan önce güvenli bir şekilde test edip doğrulamamı sağladı.
 
 ### Araçlar ve Ortam
 * **SIEM:** Splunk Enterprise
-* **Log Kaynağı:** Özel Üretilmiş Sentetik Apache Access Logları
-* **Analiz Edilen Tehditler:** SQL Injection (SQLi) ve Local File Inclusion (LFI)
+* **Log Kaynağı:** Özel Üretilmiş Sentetik Apache Logları
+* **İncelenen Tehditler:** SQL Injection (SQLi) ve Local File Inclusion (LFI)
 
 ### 1. Aşama: SQL Injection (SQLi) Tespiti
-Saldırganlar backend veritabanlarını manipüle etmek için genellikle URL-encoded karakterler (tek tırnak için `%27` gibi) veya veritabanı komutları (`UNION` gibi) kullanırlar. Bu spesifik girişimleri izole etmek için özel bir SPL sorgusu hazırladım.
+Saldırganlar veritabanlarını manipüle etmek için genellikle URL-encoded karakterler (`%27` gibi) veya `UNION` gibi komutlar kullanır. Splunk üzerinde bu spesifik denemeleri yakalayacak bir SPL sorgusu hazırladım.
 * **Sorgu:** `index="webapp" ("UNION" OR "%27")`
 
 <img src="1-sqli-detection.png">
 
 ### 2. Aşama: Local File Inclusion (LFI) Tespiti
-Hassas sistem dosyalarını okumayı hedefleyen directory traversal (dizin atlama) girişimlerini tespit etmek için, web request'leri içindeki spesifik dosya yollarını (`etc/passwd` gibi) avladım.
+Sistemdeki hassas dosyaları okumaya yönelik "directory traversal" (dizin atlama) girişimlerini yakalamak için, web isteklerinin içindeki `etc/passwd` gibi kritik dosya yollarını aradım.
 * **Sorgu:** `index="webapp" "etc/passwd"`
 
 <img src="2-lfi-detection.png">
 
-### 3. Aşama: Correlation Rule (Korelasyon Kuralı) ve Alert Konfigürasyonu
-Alert fatigue (alarm yorgunluğu) yaşamamak adına, bu iki farklı tehdit vektörünü tek bir yüksek doğruluklu (high-fidelity) korelasyon kuralında birleştirdim. Ardından, bu kritik web saldırı pattern'leri tespit edildiğinde tetiklenen, High-Severity seviyesinde otomatik bir alarm (Alert) konfigüre ettim.
+### 3. Aşama: Korelasyon Kuralı ve Alarm Kurulumu
+Gereksiz alarm kalabalığını (alert fatigue) önlemek için bu iki tehdit vektörünü tek ve net bir korelasyon kuralında birleştirdim. Ardından, bu saldırı kalıpları eşleştiği an tetiklenecek "High-Severity" seviyesinde otomatik bir alarm oluşturdum.
 * **Korelasyon Sorgusu:** `index="webapp" ("UNION" OR "%27" OR "etc/passwd")`
 * **Alarm Başlığı:** CRITICAL: Web Application Attack Detected (SQLi/LFI)
 
 <img src="3-alert-configuration.png">
 
 ## Sonuç
-Bu laboratuvar; saldırı trafiğini simüle etme, nokta atışı SPL sorguları yazma ve gelişmiş web tehditlerini tespit etmek için özel korelasyon alarmları (correlation alerts) inşa etme yeteneğini vurgulayarak, SIEM kural geliştirme süreçlerine proaktif ve analitik bir yaklaşım sergilemektedir.
+Bu laboratuvar; saldırı trafiğini simüle etme, nokta atışı SPL sorguları yazma ve gelişmiş web tehditlerini yakalamak için korelasyon alarmları oluşturma becerilerini öne çıkarıyor. SIEM kural geliştirme süreçlerine analitik ve proaktif bir yaklaşım sunuyor.
